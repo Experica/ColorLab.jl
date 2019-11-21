@@ -1,4 +1,3 @@
-include("color_data.jl")
 using Dierckx,LinearAlgebra
 
 "Tristimulus values of digital color, based on spectral measurement and matching functions"

@@ -1,5 +1,4 @@
-# Human color data from http://www.cvrl.org/
-
+## Human color data from http://www.cvrl.org/
 "2-deg cone fundamentals based on the Stiles & Burch 10-deg CMFs (adjusted to 2-deg), Stockman & Sharpe (2000), Linear Energy"
 const sscone2le =
    [390.0  4.15003360E-04  3.68349248E-04  9.54728799E-03;
@@ -17817,3 +17816,4 @@ const cam16uniquehue = [20.14 90.00 164.25 237.53 380.14;
 const hslhuewpYm = [0.63  0.54  0.42  0.34  0.3  0.27  0.22  0.17  0.15  0.2  0.32  0.5   0.33;
                     0.34  0.41  0.5   0.57  0.6  0.5   0.33  0.15  0.07  0.1  0.16  0.27  0.33;
                     1.0   1.0   1.0   1.0   1.0  1.0   1.0   1.0   1.0   1.0  1.0   1.0   1.0]
+                    

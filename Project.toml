@@ -2,3 +2,11 @@ name = "ColorLab"
 uuid = "c5b589a2-a6b9-49ee-a8e2-5aea4d514ee8"
 authors = ["Li Alex Zhang <fff008@gmail.com>"]
 version = "0.1.0"
+
+[deps]
+Dierckx = "39dd38d3-220a-591b-8e3c-4c3a8c710a94"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+Makie = "ee78f7c6-11fb-53f2-987a-cfe4a2b5a57a"
+Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
+StatsMakie = "65254759-4cff-5aa5-8326-61ce017a8c70"
+YAML = "ddb6d928-2868-570f-bddf-ab3f9cf99eb6"
