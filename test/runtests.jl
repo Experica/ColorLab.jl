@@ -45,9 +45,9 @@ displayname = "Trinitron"
 resultdir = "./$displayname"
 mkpath(resultdir)
 
-config = YAML.load_file("CommandConfig - Display Measurement.yaml")
-RGBToLMS,LMSToRGB = RGBLMSMatrix(RGBSpectral(config["Display"][displayname]["SpectralMeasurement"])...)
-RGBToXYZ,XYZToRGB = RGBXYZMatrix(RGBSpectral(config["Display"][displayname]["SpectralMeasurement"])...)
+display = YAML.load_file("DisplayMeasurement.yaml")
+RGBToLMS,LMSToRGB = RGBLMSMatrix(RGBSpectral(display["Display"][displayname]["SpectralMeasurement"])...)
+RGBToXYZ,XYZToRGB = RGBXYZMatrix(RGBSpectral(display["Display"][displayname]["SpectralMeasurement"])...)
 
 
 # unit cube digital colors
