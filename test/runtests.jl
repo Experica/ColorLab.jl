@@ -1,4 +1,4 @@
-using ColorLab,Plots,YAML,Makie,StatsMakie
+using ColorLab,Test,YAML,Makie,StatsMakie
 
 "Get digital RGB color spectral measured from a specific display"
 function RGBSpectral(measurement)
@@ -7,8 +7,9 @@ function RGBSpectral(measurement)
     I = measurement["Spectral"]
     return C,λ,I
 end
+cd(@__DIR__)
 
-# plot cone fundamentals
+## plot cone fundamentals
 Plots.plot(sscone2le[:,1],sscone2le[:,2:end],linewidth=2,color=["Red" "Green" "Blue"],xlabel="Wavelength (nm)",ylabel="Sensitivity",label=["L" "M" "S"],title="Cone Fundamentals(2deg)")
 foreach(i->savefig("Cone Fundamentals(2deg)$i"),[".png",".svg"])
 
@@ -34,7 +35,6 @@ Plots.plot(xyz10[:,1],xyz10[:,2:end],linewidth=2,color=["Red" "Green" "Blue"],xl
 foreach(i->savefig("Color Matching Functions_xyz(10deg)$i"),[".png",".svg"])
 
 
-
 # ASUS ROG Swift PG279Q IPS LCD
 displayname = "ROGPG279Q"
 # ViewSonic VX3276mhd IPS LCD
@@ -46,8 +46,8 @@ resultdir = "./$displayname"
 mkpath(resultdir)
 
 display = YAML.load_file("DisplayMeasurement.yaml")
-RGBToLMS,LMSToRGB = RGBLMSMatrix(RGBSpectral(display["Display"][displayname]["SpectralMeasurement"])...)
-RGBToXYZ,XYZToRGB = RGBXYZMatrix(RGBSpectral(display["Display"][displayname]["SpectralMeasurement"])...)
+RGBToLMS,LMSToRGB = RGBLMSMatrix(RGBSpectral(display[displayname]["SpectralMeasurement"])...)
+RGBToXYZ,XYZToRGB = RGBXYZMatrix(RGBSpectral(display[displayname]["SpectralMeasurement"])...)
 
 
 # unit cube digital colors

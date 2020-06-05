@@ -1,6 +1,9 @@
-## Human color data from http://www.cvrl.org/
+# Human color data from http://www.cvrl.org
 
-"2-deg cone fundamentals based on the Stiles & Burch 10-deg CMFs (adjusted to 2-deg), Stockman & Sharpe (2000), Linear Energy"
+"""
+2-deg cone fundamentals based on the Stiles & Burch 10-deg CMFs (adjusted to 2-deg), Stockman & Sharpe (2000).
+Each row are the wavelength(nm), L, M, S Cone Linear Energy.
+"""
 const sscone2le =
    [390.0  4.15003360E-04  3.68349248E-04  9.54728799E-03;
     390.1  4.23071834E-04  3.75656271E-04  9.72488908E-03;
@@ -4403,7 +4406,10 @@ const sscone2le =
     829.8  9.85561425E-07  9.63906446E-08  0.0;
     829.9  9.79916173E-07  9.58643834E-08  0.0;
     830.0  9.74306403E-07  9.53411481E-08  0.0]
-"10-deg cone fundamentals based on the Stiles & Burch 10-deg CMFs, Stockman & Sharpe (2000), Linear Energy"
+ """
+ 10-deg cone fundamentals based on the Stiles & Burch 10-deg CMFs, Stockman & Sharpe (2000).
+ Each row are the wavelength(nm), L, M, S Cone Linear Energy.
+ """
 const sscone10le =
   [390.0  4.07619067E-04  3.58227395E-04  6.14264795E-03;
    390.1  4.15826325E-04  3.65580739E-04  6.26169815E-03;
@@ -8806,7 +8812,9 @@ const sscone10le =
    829.8  8.83092365E-07  8.58246317E-08  0.0;
    829.9  8.78034051E-07  8.53560577E-08  0.0;
    830.0  8.73007530E-07  8.48901776E-08  0.0]
-"""2-deg CIE "physiologically-relevant" luminous efficiency functions consistent with the Stockman & Sharpe 2-deg cone fundamentals, Linear Energy"""
+"""
+2-deg CIE "physiologically-relevant" luminous efficiency functions consistent with the Stockman & Sharpe 2-deg cone fundamentals, Linear Energy.
+"""
 const v2le =
   [390.0  4.14616E-04;
    390.1  4.22728E-04;
@@ -13209,7 +13217,9 @@ const v2le =
    829.8  7.13516E-07;
    829.9  7.09438E-07;
    830.0  7.05386E-07]
-"""10-deg CIE "physiologically-relevant" luminous efficiency functions consistent with the Stockman & Sharpe 10-deg cone fundamentals, Linear Energy"""
+"""
+10-deg CIE "physiologically-relevant" luminous efficiency functions consistent with the Stockman & Sharpe 10-deg cone fundamentals, Linear Energy.
+"""
 const v10le =
   [390.0  4.07678E-04;
    390.1  4.15936E-04;
@@ -17612,9 +17622,9 @@ const v10le =
    829.8  6.41852E-07;
    829.9  6.38183E-07;
    830.0  6.34538E-07]
-"Stiles & Burch (1955, 1959) color matching primaries"
+"Stiles & Burch (1955, 1959) color matching primaries, wavelength(nm) for r, g, b."
 const sbrgb_primary = [645.16,526.32,444.44]
-"Stiles & Burch (1955) 2-deg rgb color matching functions"
+"Stiles & Burch (1955) 2-deg r, g, b color matching functions"
 const sbrgb2 =
    [390.0  1.83970e-003  -4.53930e-004  1.21520e-002;
     395.0  4.61530e-003  -1.04640e-003  3.11100e-002;
@@ -17685,7 +17695,7 @@ const sbrgb2 =
     720.0  6.51770e-003  -5.76770e-005  6.10570e-006;
     725.0  4.53770e-003  -3.90030e-005  5.02770e-006;
     730.0  3.17420e-003  -2.65110e-005  4.12510e-006]
-"Stiles & Burch (1959) 10-deg rgb color matching functions"
+"Stiles & Burch (1959) 10-deg r, g, b color matching functions"
 const sbrgb10 =
    [390.0  1.5000E-03  -4.0000E-04  6.2000E-03;
     395.0  3.8000E-03  -1.0000E-03  1.6100E-02;
@@ -17784,7 +17794,7 @@ const LMSToXYZ2 =   [1.94735469  -1.41445123  0.36476327;
 const LMSToXYZ10 =  [1.93986443  -1.34664359  0.43044935;
                      0.69283932   0.34967567  0.0;
                      0.0          0.0         2.14687945]
-"CIE White Point in CIE [X,Y,Z] coordinates"
+"CIE White Points in CIE [X,Y,Z] coordinates"
 const WP_A   = [1.09850, 1.00000, 0.35585]
 const WP_B   = [0.99072, 1.00000, 0.85223]
 const WP_C   = [0.98074, 1.00000, 1.18232]
@@ -17813,7 +17823,3 @@ const cam16uniquehue = [20.14 90.00 164.25 237.53 380.14;
                         0.8   0.7   1.0    1.2    0.8;
                         0.0   100.0 200.0  300.0  400.0;
                         :R    :Y    :G     :B      :R]
-"HSL equal angular distance hue[0:30:330] and equal energy white with matched luminance in CIE [x,y,Y] coordinates"
-const hslhuewpYm = [0.63  0.54  0.42  0.34  0.3  0.27  0.22  0.17  0.15  0.2  0.32  0.5   0.33;
-                    0.34  0.41  0.5   0.57  0.6  0.5   0.33  0.15  0.07  0.1  0.16  0.27  0.33;
-                    1.0   1.0   1.0   1.0   1.0  1.0   1.0   1.0   1.0   1.0  1.0   1.0   1.0]

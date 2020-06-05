@@ -32,10 +32,10 @@ function xyzresponse(C,λ,I;observer=10)
     end
     matchcolors(C,λ,I,newcmf(conef,m))
 end
-"Michelson Contrast, where `michelson(lmax, lmin) = weber(lmax, (lmax+lmin)/2)`"
-contrast_michelson(lmax,lmin) = (lmax-lmin)/(lmax+lmin)
-"Weber Contrast, where `weber(lmax, lmin) = michelson(lmax, 2*lmin-lmax)`"
-contrast_weber(lmax,lmin) = (lmax/lmin)-1
+"Michelson Contrast, where ``michelson(Lmax, Lmin) = weber(Lmax, Lmean), Lmean = (Lmax+Lmin)/2``"
+contrast_michelson(Lmax,Lmin) = (Lmax-Lmin)/(Lmax+Lmin)
+"Weber Contrast, where ``weber(L, Lb) = michelson(L, 2Lb-L)``"
+contrast_weber(L,Lb) = (L/Lb)-1
 
 TranslateXYZMatrix(;x=0,y=0,z=0) = TranslateXYZMatrix([x,y,z])
 function TranslateXYZMatrix(t::Vector)
