@@ -188,27 +188,26 @@ return point of intersection and if it's on direction
 """
 function intersectlineplane(Pₗ,Dₗ,Pₚ,Nₚ)
     NₚᵀDₗ = Nₚ'*Dₗ
-    NₚᵀDₗ == 0 && return []
+    NₚᵀDₗ == 0 && return nothing
     λ = Nₚ'*(Pₚ - Pₗ) / NₚᵀDₗ
     return Pₗ + λ*Dₗ, λ >=0
 end
 """
-Intersection points of a line and the six faces of the unit cube with origin as a vertex and three axies as edges.
+Intersection point of a line and the six faces of the unit cube with origin as a vertex and three axies as edges.
 points of a line are defined as a direction(Dₗ) through a point(Pₗ)
 
-return intersection points on opposite direction and direction
+return intersection point on direction
 """
 function intersectlineunitorigincube(Pₗ,Dₗ)
-    ips=[];ids=[]
     ps = [zeros(3,3) ones(3,3)]
     ns = [Matrix{Float64}(I,3,3) Matrix{Float64}(I,3,3)]
     for i in 1:6
         p,d = intersectlineplane(Pₗ,Dₗ,ps[:,i],ns[:,i])
-        if !isempty(p) && all(i->-eps()<=i<=1+eps(),p)
-            push!(ips,p);push!(ids,d)
+        if !isnothing(p) && all(i->-eps(1.0)<=i<=1+eps(1.0),p) && d
+            return p
         end
     end
-    return hcat(ips[sortperm(ids)]...)
+    return nothing
 end
 """
 Points of a line segment defined by two points P₀ and P₁
