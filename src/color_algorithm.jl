@@ -1,13 +1,19 @@
 using Dierckx,LinearAlgebra
 
 "Tristimulus values of digital color, based on spectral measurement and matching functions"
-function matchcolors(C,λ,I,cmf)
-    r = cmf[:,1];TC=Vector{Vector{Float64}}(undef,length(C))
-    for i in 1:length(C)
-        s = Spline1D(λ[i],I[i],k=3,bc="zero")(r)'
-        TC[i] = [s*cmf[:,2],s*cmf[:,3],s*cmf[:,4]]
+function matchcolors(C,λ,I,cmf;f=nothing)
+    n = length(C);MC=Vector{Vector{Float64}}(undef,n)
+    @views r = cmf[:,1]
+    if isnothing(f)
+        f=1;dr=1
+    else
+        dr = r[2]-r[1]
     end
-    return TC,C
+    for i in 1:n
+        @views s = Spline1D(λ[i],I[i],k=3,bc="zero")(r)'
+        @views MC[i] = f*dr*[s*cmf[:,2],s*cmf[:,3],s*cmf[:,4]]
+    end
+    return MC,C
 end
 newcmf(cmf,m) = hcat(cmf[:,1],(m*cmf[:,2:end]')')
 divsum(m)=m./sum(m,dims=1)
@@ -21,7 +27,14 @@ function lmsresponse(C,λ,I;observer=10)
     conef = observer==10 ? sscone10le : sscone2le
     matchcolors(C,λ,I,conef)
 end
-"CIE XYZ Tristimulus values of digital colors, based on spectral measurement and xyz matching functions"
+"""
+CIE XYZ Tristimulus values of digital colors, based on following function:
+
+XYZ = 683∫s(λ)x̄ȳz̄(λ)dλ
+
+where s(λ) is the power spectrum, x̄ȳz̄(λ) are the matching functions.
+Y is the luminance(cd/m²)
+"""
 function xyzresponse(C,λ,I;observer=10)
     if observer == 10
         conef = sscone10le
@@ -30,7 +43,7 @@ function xyzresponse(C,λ,I;observer=10)
         conef = sscone2le
         m = LMSToXYZ2
     end
-    matchcolors(C,λ,I,newcmf(conef,m))
+    matchcolors(C,λ,I,newcmf(conef,m),f=683)
 end
 "Michelson Contrast, where ``michelson(Lmax, Lmin) = weber(Lmax, Lmean), Lmean = (Lmax+Lmin)/2``"
 contrast_michelson(Lmax,Lmin) = (Lmax-Lmin)/(Lmax+Lmin)
