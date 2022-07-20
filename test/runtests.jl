@@ -1,4 +1,4 @@
-using ColorLab,Test,YAML,Makie,StatsMakie
+using ColorLab,Test,YAML,GLMakie
 
 "Get digital RGB color spectral measured from a specific display"
 function RGBSpectral(measurement)
