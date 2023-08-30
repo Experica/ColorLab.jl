@@ -1,7 +1,7 @@
 name = "ColorLab"
 uuid = "c5b589a2-a6b9-49ee-a8e2-5aea4d514ee8"
 authors = ["Li Alex Zhang <fff008@gmail.com>"]
-version = "1.0.2"
+version = "1.1.0"
 
 [deps]
 Dierckx = "39dd38d3-220a-591b-8e3c-4c3a8c710a94"
@@ -9,13 +9,11 @@ LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 
 [compat]
 Dierckx = "0.5"
-julia = "1.6"
+julia = "1.9"
 
 [extras]
-BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
-GLMakie = "e9467ef8-e4e7-5192-8a1a-b1aee30e663a"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 YAML = "ddb6d928-2868-570f-bddf-ab3f9cf99eb6"
 
 [targets]
-test = ["Test", "BenchmarkTools", "GLMakie", "YAML"]
+test = ["Test", "YAML"]

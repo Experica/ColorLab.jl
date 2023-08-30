@@ -1,262 +1,151 @@
 using Dierckx,LinearAlgebra
 
-"Tristimulus values of digital color, based on spectral measurement and matching functions"
-function matchcolors(C,λ,I,cmf;f=nothing)
-    n = length(C);MC=Vector{Vector{Float64}}(undef,n)
-    @views r = cmf[:,1]
+"Tristimulus matching values of single wavelength unit spectral"
+matchlambda(λ::Real,cmf::AbstractMatrix) = @views [Spline1D(cmf[:,1],cmf[:,i+1],k=3,bc="zero")(λ) for i in 1:3]
+
+"Tristimulus values, based on spectral measurement and matching functions"
+function matchcolors(C,λ,I,cmf::AbstractMatrix;f=nothing)
+    MC = similar(C)
+    @views w = cmf[:,1]
     if isnothing(f)
-        f=1;dr=1
+        s = 1
     else
-        dr = r[2]-r[1]
+        Δw = w[2] - w[1]
+        s = f*Δw
     end
-    for i in 1:n
-        @views s = Spline1D(λ[i],I[i],k=3,bc="zero")(r)'
-        @views MC[i] = f*dr*[s*cmf[:,2],s*cmf[:,3],s*cmf[:,4]]
+    for i in eachindex(C)
+        MI = Spline1D(λ[i],I[i],k=3,bc="zero")(w)'
+        @views MC[i] = s*[MI*cmf[:,2], MI*cmf[:,3], MI*cmf[:,4]]
     end
     return MC,C
 end
-newcmf(cmf,m) = hcat(cmf[:,1],(m*cmf[:,2:end]')')
-divsum(m)=m./sum(m,dims=1)
-"Color matching Tristimulus values of single Wavelength unit spectral"
-function matchlambda(λ,cmf)
-    fs = [Spline1D(cmf[:,1],cmf[:,i+1],k=3,bc="zero") for i in 1:3]
-    return map(f->f(λ),fs)
-end
-"Cone activations of digital colors, based on spectral measurement and cone fundamentals"
-function lmsresponse(C,λ,I;observer=10)
-    conef = observer==10 ? sscone10le : sscone2le
-    matchcolors(C,λ,I,conef)
-end
-"""
-CIE XYZ Tristimulus values of digital colors, based on following function:
 
-XYZ = 683∫s(λ)x̄ȳz̄(λ)dλ
+"Cone activations of colors, based on spectral measurement and cone fundamentals"
+matchcolors_LMS(C,λ,I;observer=10,f=nothing) = matchcolors(C,λ,I,observer==10 ? sscone10le : sscone2le;f)
 
-where s(λ) is the power spectrum, x̄ȳz̄(λ) are the matching functions.
-Y is the luminance(cd/m²)
 """
-function xyzresponse(C,λ,I;observer=10)
+CIE “physiologically-relevant” XYZ of colors, based on following formula:
+
+``XYZ = 683∫S(λ)x̄ȳz̄(λ)dλ``
+
+where S(λ) is the power spectrum, x̄ȳz̄(λ) are the matching functions and Y will be the luminance(cd/m²).
+"""
+function matchcolors_XYZ(C,λ,I;observer=10,f=683)
     if observer == 10
         conef = sscone10le
-        m = LMSToXYZ10
+        M = LMSToXYZ10
     else
         conef = sscone2le
-        m = LMSToXYZ2
+        M = LMSToXYZ2
     end
-    matchcolors(C,λ,I,newcmf(conef,m),f=683)
+    # Only 1nm CMFs have strictly equal integrals, so that equal energy spectrum has [1/3, 1/3] CIE xy Chromaticity.
+    matchcolors(C,λ,I,cmf(M,conef;wi=1:10:size(conef,1));f)
 end
+
+"new color matching functions by transform existing ones"
+cmf(M::AbstractMatrix,f::AbstractMatrix;wi=:) = @views hcat(f[wi,1],(M*f[wi,2:end]')')
 "Michelson Contrast, where ``michelson(Lmax, Lmin) = weber(Lmax, Lmean), Lmean = (Lmax+Lmin)/2``"
 contrast_michelson(Lmax,Lmin) = (Lmax-Lmin)/(Lmax+Lmin)
 "Weber Contrast, where ``weber(L, Lb) = michelson(L, 2Lb-L)``"
 contrast_weber(L,Lb) = (L/Lb)-1
+"Converting Matrices between RGB and LMS color spaces, based on spectral measurement and cone fundamentals"
+RGBLMSMatrix(C,λ,I;observer=10,f=nothing,ishomo=true) = ConvertMatrix(matchcolors_LMS(C,λ,I;observer,f)...;ishomo)
+"Converting Matrices between RGB and CIE XYZ color spaces, based on spectral measurement and CIE xyz matching functions"
+RGBXYZMatrix(C,λ,I;observer=10,f=683,ishomo=true) = ConvertMatrix(matchcolors_XYZ(C,λ,I;observer,f)...;ishomo)
 
-TranslateXYZMatrix(;x=0,y=0,z=0) = TranslateXYZMatrix([x,y,z])
-function TranslateXYZMatrix(t::Vector)
-    tm =  [1.0 0.0 0.0   t[1];
-           0.0 1.0 0.0   t[2];
-           0.0 0.0 1.0   t[3];
-           0.0 0.0 0.0 1.0]
+"Convert CIE XYZ to CIE xyY."
+function XYZ2xyY(XYZ::AbstractMatrix)
+    size(XYZ,1) == 4 && (XYZ=dehomovector(XYZ))
+    xyz = divsum(XYZ)
+    @views xyz[3,:]=XYZ[2,:]
+    replace!(xyz,NaN=>0)
+    return xyz
 end
-function RotateXYZMatrix(rad::Real;dims=1)
-    rads = [0.0,0.0,0.0]
-    if 1<=dims<=3
-        rads[dims]=rad
-    end
-    RotateXYZMatrix(rads)
+"Convert CIE xyY to CIE XYZ."
+function xyY2XYZ(xyY::AbstractMatrix;ishomo=true)
+    @views s = xyY[3:3,:]./xyY[2:2,:]
+    @views XYZ = s.*vcat(xyY[1:2,:], 1 .- sum(xyY[1:2,:],dims=1))
+    replace!(XYZ,NaN=>0)
+    ishomo && (XYZ = homovector(XYZ))
+    return XYZ
 end
-function RotateXYZMatrix(rads::Vector)
-    axis=nothing
-    ri = findall(!iszero,rads)
-    if length(ri) == 1 && ri[1] <= 3
-        axis = ri[1]
-    end
-    isnothing(axis) && return Matrix{Float64}(I,4,4)
-    c = cos(rads[axis])
-    s = sin(rads[axis])
-    if axis==1
-      rm = [1.0 0.0 0.0 0.0;
-            0.0   c  -s 0.0;
-            0.0   s   c 0.0;
-            0.0 0.0 0.0 1.0]
-    elseif axis==2
-      rm = [  c 0.0   s 0.0;
-            0.0 1.0 0.0 0.0;
-             -s 0.0   c 0.0;
-            0.0 0.0 0.0 1.0]
-    else
-      rm = [  c  -s 0.0 0.0;
-              s   c 0.0 0.0;
-            0.0 0.0 1.0 0.0;
-            0.0 0.0 0.0 1.0]
-    end
-end
-quavectors(vs) = vcat(vs,ones(size(vs,2))')
-trivectors(vs) = vs[1:3,:]
-quamatrix(m) = vcat(hcat(m,zeros(3)),[0.0 0.0 0.0 1.0])
-trimatrix(m) = m[1:3,1:3]
-"Converting Matrix between digital RGB and LMS Space, based on spectral measurement and cone fundamentals"
-function RGBLMSMatrix(C,λ,I;observer=10)
-    TC,C = lmsresponse(C,λ,I,observer=observer)
-    # Solve System of Linear Equations in form of Space Converting Matrix
-    mc=hcat(C...);mtc=hcat(TC...)
-    isqua = size(mc,1)==4
-    if isqua
-        mc = trivectors(mc)
-    end
-    RGBToLMS = mtc/mc
-    LMSToRGB = inv(RGBToLMS)
-    if isqua
-        RGBToLMS = quamatrix(RGBToLMS)
-        LMSToRGB = quamatrix(LMSToRGB)
-    end
-    return RGBToLMS,LMSToRGB
-end
-"Converting Matrix between digital RGB and CIE XYZ Space, based on spectral measurement and xyz matching functions"
-function RGBXYZMatrix(C,λ,I;observer=10)
-    TC,C = xyzresponse(C,λ,I,observer=observer)
-    # Solve System of Linear Equations in form of Space Converting Matrix
-    mc=hcat(C...);mtc=hcat(TC...)
-    isqua = size(mc,1)==4
-    if isqua
-        mc = trivectors(mc)
-    end
-    RGBToXYZ = mtc/mc
-    XYZToRGB = inv(RGBToXYZ)
-    if isqua
-        RGBToXYZ = quamatrix(RGBToXYZ)
-        XYZToRGB = quamatrix(XYZToRGB)
-    end
-    return RGBToXYZ,XYZToRGB
-end
+
 """
-Converting Matrix between LMS and Cone Contrast(Weber) Space
+Converting Matrices between LMS and Cone Contrast(Weber) color spaces.
 (DH Brainard, Cone contrast and opponent modulation color spaces, human color vision, 1996)
 """
-function LMSContrastMatrix(bg)
+function LMSContrastMatrix(bg::AbstractVector)
     # translate origin to bg to get differential cone activation
-    t = [1 0 0 -bg[1];
-         0 1 0 -bg[2];
-         0 0 1 -bg[3];
-         0 0 0 1]
+    t = TranslateMatrix(-bg)
     # scale relative to bg to get cone contrast
-    s = [inv(bg[1]) 0 0 0;
-         0 inv(bg[2]) 0 0;
-         0 0 inv(bg[3]) 0;
-         0 0 0 1]
+    s = ScaleMatrix(inv.(bg))
     LMSToContrast = s*t
     ContrastToLMS = inv(LMSToContrast)
     return LMSToContrast,ContrastToLMS
 end
+
 """
-Converting Matrix between differential LMS and DKL[L+M, L-M, S-(L+M)] Space
+Converting Matrices between differential LMS relative to background and DKL[L+M, L-M, S-(L+M)] color spaces.
 (DH Brainard, Cone contrast and opponent modulation color spaces, human color vision, 1996)
 """
-function dLMSDKLMatrix(bg;cone=nothing,v=nothing,isnorm=true)
+function dLMSDKLMatrix(bg::AbstractVector;cone=nothing,v=nothing,isnorm=true,ishomo=true)
     wl = 1;wm = 1
     if !isnothing(cone) && !isnothing(v)
-        wl,wm = v[:,2]'/cone[:,2:3]'
+        @views wl,wm = v[:,2]'/cone[:,2:3]'
     end
-    dLMSToDKL = [wl  wm           0;
-                1 -bg[1]/bg[2] 0;
-               -wl -wm (wl*bg[1] + wm*bg[2])/bg[3]]
+    dLMSToDKL = [wl        wm                 0.0;
+                 1.0  -bg[1]/bg[2]            0.0;
+                -wl       -wm     (wl*bg[1] + wm*bg[2])/bg[3]]
     if isnorm
-        # Each column of the inverse of dLMSToDKL is the differential LMS relative to bg that isolating each DKL mechanism
+        # Each column of the inverse of dLMSToDKL is the differential LMS relative to background that isolating each DKL mechanism
         dlms_dkliso = inv(dLMSToDKL)
         # Cone contrast relative to bg
         cc = dlms_dkliso./bg[1:3]
-        # Pooled cone contrast of each differential LMS relative to bg that isolating each DKL mechanism
-        pcc = [norm(cc[:,i]) for i in 1:3]
-        # Scale differential LMS vector by its pooled cone contrast
+        # Pooled cone contrast of each differential LMS relative to background that isolating each DKL mechanism
+        pcc = [norm(i) for i in eachslice(cc,dims=2)]
+        # Scale differential LMS by its pooled cone contrast
         udlms_dkliso = dlms_dkliso./pcc'
-        # Rescale dLMSToDKL so that differential LMS which isolating DKL mechanism and having unit pooled cone contrast will result unit DKL response
+        # Rescale dLMSToDKL so that differential LMS which isolating DKL mechanism and having unit pooled cone contrast will result unit DKL
         dLMSToDKL = inv(dLMSToDKL*udlms_dkliso)*dLMSToDKL
+    end
+    if ishomo
+        dLMSToDKL = homomatrix(dLMSToDKL)
     end
     DKLTodLMS = inv(dLMSToDKL)
     return dLMSToDKL,DKLTodLMS
 end
-"Converting Matrix between LMS and DKL[L+M, L-M, S-(L+M)] Space"
-function LMSDKLMatrix(bg;observer=10,isnorm=true)
+
+"Converting Matrices between LMS and DKL[L+M, L-M, S-(L+M)] color spaces."
+function LMSDKLMatrix(bg::AbstractVector;observer=10,isnorm=true)
     if observer == 10
-        conef = sscone10le
+        cone = sscone10le
         v = v10le
     else
-        conef = sscone2le
+        cone = sscone2le
         v = v2le
     end
-    dLMSToDKL,DKLTodLMS = dLMSDKLMatrix(bg,cone=conef,v=v,isnorm=isnorm)
-    t = [1 0 0 -bg[1];
-         0 1 0 -bg[2];
-         0 0 1 -bg[3];
-         0 0 0 1]
-    LMSToDKL = quamatrix(dLMSToDKL)*t
+    dLMSToDKL,DKLTodLMS = dLMSDKLMatrix(bg;cone,v,isnorm,ishomo=true)
+    LMSToDKL = dLMSToDKL*TranslateMatrix(-bg)
     DKLToLMS = inv(LMSToDKL)
     return LMSToDKL,DKLToLMS
 end
-"""
-Intersection point of a line and a plane.
-points of a line are defined as a direction(Dₗ) through a point(Pₗ): P = Pₗ + λDₗ , where λ is a scaler
-points of a plane are defined as a plane through a point(Pₚ) and with normal vector(Nₚ) : Nₚᵀ(P - Pₚ) = 0 , where Nᵀ is the transpose of N
 
-return point of intersection and if it's on direction
-"""
-function intersectlineplane(Pₗ,Dₗ,Pₚ,Nₚ)
-    NₚᵀDₗ = Nₚ'*Dₗ
-    NₚᵀDₗ == 0 && return nothing
-    λ = Nₚ'*(Pₚ - Pₗ) / NₚᵀDₗ
-    return Pₗ + λ*Dₗ, λ >=0
-end
-"""
-Intersection point of a line and the six faces of the unit cube with origin as a vertex and three axies as edges.
-points of a line are defined as a direction(Dₗ) through a point(Pₗ)
-
-return intersection point on direction
-"""
-function intersectlineunitorigincube(Pₗ,Dₗ)
-    ps = [zeros(3,3) ones(3,3)]
-    ns = [Matrix{Float64}(I,3,3) Matrix{Float64}(I,3,3)]
-    for i in 1:6
-        p,d = intersectlineplane(Pₗ,Dₗ,ps[:,i],ns[:,i])
-        if !isnothing(p) && all(i->-eps(1.0)<=i<=1+eps(1.0),p) && d
-            return p
+"Desaturate perceptible but not displayable CIE colors(each column) into the gamut of a display"
+function desaturate2gamut!(x::AbstractMatrix)
+    for i in eachslice(x,dims=2)
+        min = minimum(i)
+        if min<0
+            i.-=min
+        end
+        max = maximum(i)
+        if max>0
+            i./=max
         end
     end
-    return nothing
+    return x
 end
-"""
-Points of a line segment defined by two points P₀ and P₁
-d: points density of unit line length
-"""
-function linepoints(P₀,P₁;d=10)
-    d = max(1,d)
-    Dₗ = P₁-P₀
-    l =norm(Dₗ)
-    hcat([P₀.+λ*Dₗ for λ in 0:1/(d*l):1]...)
-end
-function XYZ2xyY(m)
-    xyz = divsum(trivectors(m))
-    xyz[3,:]=m[2,:]
-    replace!(xyz,NaN=>0.0)
-    return xyz
-end
-function xyY2XYZ(m)
-    s = m[3:3,:]./m[2:2,:]
-    XYZ = s.*vcat(m[1:2,:], 1 .- sum(m[1:2,:],dims=1))
-    replace!(XYZ,NaN=>0.0)
-    return XYZ
-end
-function desaturate2gamut!(vs)
-    for i in 1:size(vs,2)
-        minc = minimum(vs[:,i])
-        if minc<0
-            vs[:,i].-=minc
-        end
-        maxc = maximum(vs[:,i])
-        if maxc>0
-            vs[:,i]./=maxc
-        end
-    end
-    return vs
-end
+
+
 function cam16uniquehueindex(h′)
     h′ᵢ = zeros(Int,size(h′))
     for j in 1:length(h′)

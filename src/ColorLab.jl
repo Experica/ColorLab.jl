@@ -1,6 +1,7 @@
 module ColorLab
 
 include("color_data.jl")
+include("transformation.jl")
 include("color_algorithm.jl")
 
 # export all symbols
