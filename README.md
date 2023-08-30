@@ -16,4 +16,4 @@
 
 ## CAM16
 
-### [Tutorial Jupyter Notebook]("./test/ColorSpace.ipynb")
+### [Tutorial Jupyter Notebook](/test/ColorSpace.ipynb)
